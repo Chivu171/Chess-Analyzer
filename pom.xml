@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.myproject</groupId>
+  <artifactId>chess-project</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <name>Chess Project</name>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <!-- Fix lỗi Java 7 -->
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
+  </properties>
+
+  <!-- 
+    *** FIX LỖI TẢI THƯ VIỆN (LẦN CUỐI) ***
+    JCenter đã chết. Chúng ta dùng JitPack (kho này 100% hoạt động).
+  -->
+  <repositories>
+      <repository>
+          <id>jitpack.io</id>
+          <url>https://jitpack.io</url>
+      </repository>
+  </repositories>
+
+  <dependencies>
+    <!-- Thư viện Test (sẽ dùng sau) -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.13.2</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- 
+      Thư viện CHESSLIB
+      GroupId và ArtifactId này là đúng cho JitPack
+    -->
+    <dependency>
+        <groupId>com.github.bhlangonijr</groupId>
+        <artifactId>chesslib</artifactId>
+        <version>1.3.3</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <pluginManagement>
+      <!-- ... (plugin mặc định) ... -->
+      <plugins>
+        <plugin><artifactId>maven-clean-plugin</artifactId><version>3.1.0</version></plugin>
+        <plugin><artifactId>maven-resources-plugin</artifactId><version>3.0.2</version></plugin>
+        <plugin><artifactId>maven-compiler-plugin</artifactId><version>3.8.0</version></plugin>
+        <plugin><artifactId>maven-surefire-plugin</artifactId><version>2.22.1</version></plugin>
+        <plugin><artifactId>maven-jar-plugin</artifactId><version>3.0.2</version></plugin>
+        <plugin><artifactId>maven-install-plugin</artifactId><version>2.5.2</version></plugin>
+        <plugin><artifactId>maven-deploy-plugin</artifactId><version>2.8.2</version></plugin>
+        <plugin><artifactId>maven-site-plugin</artifactId><version>3.7.1</version></plugin>
+        <plugin><artifactId>maven-project-info-reports-plugin</artifactId><version>3.0.0</version></plugin>
+      </plugins>
+    </pluginManagement>
+    
+    <!-- PLUGIN ĐỂ CHẠY (sẽ dùng cho Ngày 6) -->
+    <plugins>
+        <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>3.1.0</version>
+            <configuration>
+                <mainClass>com.myproject.MainApp</mainClass>
+            </configuration>
+        </plugin>
+    </plugins>
+    
+  </build>
+</project>
