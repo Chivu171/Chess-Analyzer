@@ -1,16 +1,16 @@
-package  com.myproject;
+package  com.myproject.Algorithms;
 
 public class IChessAlgorithm {
     /**
      * Khởi động thuật toán (nếu cần).
      * @return true nếu thành công.
      */
-    boolean start();
+    //boolean start();
 
     /**
      * Dừng thuật toán (nếu cần).
      */
-    void close();
+    //void close();
 
     /**
      * Hàm chính: Lấy FEN và trả về nước đi tốt nhất.
@@ -19,6 +19,6 @@ public class IChessAlgorithm {
      * @param moveTime Thời gian suy nghĩ (ms).
      * @return Nước đi tốt nhất (dạng UCI, ví dụ: "e2e4").
      */
-    String getBestMove(String fen, int moveTime);
+    //String getBestMove(String fen, int moveTime);
     
 }
