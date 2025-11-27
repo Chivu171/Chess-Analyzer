@@ -1,6 +1,8 @@
 package com.myproject;
 
 import com.myproject.Logic.GameController;
+import java.util.Scanner; // 1. Import thư viện Scanner
+
 
 /**
  * MainApp: Class dùng để chạy thử nghiệm (Test) các chức năng của GameController.
@@ -16,8 +18,10 @@ public class MainApp {
         // ---------------------------------------------------------
         // TEST 1: Input Hướng 1 (Load danh sách nước đi từ Text)
         // ---------------------------------------------------------
-        System.out.println("\n--- Test 1: Load danh sách nước đi (e2e4 e7e5) ---");
-        String moveList = "e2e4 e7e5";
+        System.out.println("\n--- Test 1: Cho 1 input dung hoac sai ---");
+        Scanner scanner = new Scanner(System.in);
+        
+        String moveList =scanner.nextLine();
         game.loadMoveList(moveList);
         
         // In ra FEN để kiểm tra xem tốt đã lên chưa
