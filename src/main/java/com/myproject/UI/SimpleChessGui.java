@@ -3,7 +3,9 @@ package com.myproject.UI;
 import com.github.bhlangonijr.chesslib.Board;
 import com.github.bhlangonijr.chesslib.Piece;
 import com.github.bhlangonijr.chesslib.Square;
+import com.myproject.Logic.AnalysisNode;
 import com.myproject.Logic.GameController;
+import com.myproject.Logic.TreeAnalyzer;
 
 import javax.swing.*;
 import java.awt.*;
@@ -52,6 +54,43 @@ public class SimpleChessGui extends JFrame {
         controlPanel.add(btnReset, BorderLayout.EAST);
         
         add(controlPanel, BorderLayout.SOUTH);
+        JButton btnPredict = new JButton("🔮 Dự đoán");
+controlPanel.add(btnPredict, BorderLayout.NORTH); // Hoặc vị trí bạn muốn
+
+// Xử lý sự kiện bấm nút
+btnPredict.addActionListener(e -> {
+    // Chạy trong luồng riêng để không đơ giao diện khi tính toán lâu
+    new Thread(() -> {
+        btnPredict.setEnabled(false);
+        btnPredict.setText("Đang tính...");
+        
+        try {
+            TreeAnalyzer analyzer = new TreeAnalyzer();
+            
+            // Lấy clone bàn cờ hiện tại để không ảnh hưởng bàn cờ chính
+            // (Chesslib board không có clone deep dễ dàng, 
+            // nên tạo board mới và load FEN)
+            Board analysisBoard = new Board();
+            analysisBoard.loadFromFen(gameController.getBoard().getFen());
+
+            // Bắt đầu vét cạn (Phần nặng nhất)
+            AnalysisNode rootResult = analyzer.buildGameTree(analysisBoard);
+
+            // Hiển thị lên giao diện (phải quay về luồng UI)
+            SwingUtilities.invokeLater(() -> {
+                new TreeDialog(this, rootResult).setVisible(true);
+            });
+            
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        } finally {
+            SwingUtilities.invokeLater(() -> {
+                btnPredict.setEnabled(true);
+                btnPredict.setText("🔮 Dự đoán");
+            });
+        }
+    }).start();
+    });
 
         // 3. Panel Log (East) - Để xem lịch sử
         logArea = new JTextArea(20, 15);
@@ -235,9 +274,7 @@ public class SimpleChessGui extends JFrame {
         }
     }
 
-    // Hàm main để chạy thử giao diện này
     public static void main(String[] args) {
-        // Chạy trên luồng giao diện (EDT)
         SwingUtilities.invokeLater(() -> new SimpleChessGui());
     }
 }
