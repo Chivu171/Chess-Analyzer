@@ -27,14 +27,20 @@ public class GameController {
         String toPosition = uciMove.substring(2,4).toUpperCase();
         Square from = Square.fromValue(fromPosition);
         Square to = Square.fromValue(toPosition);
-        Move move = new Move(from, to);
-        if (board.isMoveLegal(move, true)) {
-            board.doMove(move);
-            return true;
-        } else {
-            System.err.println("Nước đi không hợp lệ: " + uciMove);
+        List<Move> legalMoves = board.legalMoves();
+            
+            for (Move legalMove : legalMoves) {
+                // Kiểm tra xem nước đi người dùng nhập có khớp với nước hợp lệ nào không
+                if (legalMove.getFrom() == from && legalMove.getTo() == to) {
+                    // Tìm thấy! Thực hiện nước đi này (để tự động xử lý phong cấp nếu có)
+                    board.doMove(legalMove);
+                    return true;
+                }
+            }
+
+            // Nếu chạy hết vòng lặp mà không thấy khớp -> Nước đi sai luật
+            System.err.println("Nước đi không hợp lệ (Không nằm trong legalMoves): " + uciMove);
             return false;
-        }
         }
         catch (Exception e){
             System.err.println("Lỗi khi thực hiện nước đi: " + e.getMessage());

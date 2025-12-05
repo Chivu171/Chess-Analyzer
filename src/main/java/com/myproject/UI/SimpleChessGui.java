@@ -11,6 +11,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.Color;
 
 public class SimpleChessGui extends JFrame {
 
@@ -19,13 +20,11 @@ public class SimpleChessGui extends JFrame {
     private final JTextField inputField;
     private final JTextArea logArea;
 
-    // --- BIẾN MỚI THÊM ĐỂ XỬ LÝ CLICK CHUỘT ---
-    private Square selectedSquare = null; // Lưu vị trí ô đang được chọn (ví dụ: e2)
+    private Square selectedSquare = null; 
 
-    // Màu bàn cờ (giống Chess.com)
     private final Color lightColor = new Color(240, 217, 181);
     private final Color darkColor = new Color(181, 136, 99);
-    private final Color selectedColor = new Color(255, 255, 51); // Màu vàng để highlight khi chọn
+    private final Color selectedColor = new Color(255, 255, 51); 
 
     public SimpleChessGui() {
         this.gameController = new GameController();
@@ -35,17 +34,16 @@ public class SimpleChessGui extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
-        // 1. Panel bàn cờ (Center)
+        // 1. Panel bàn cờ
         JPanel boardPanel = new JPanel(new GridLayout(8, 8));
         initializeBoard(boardPanel);
         add(boardPanel, BorderLayout.CENTER);
 
-        // 2. Panel điều khiển (South)
+        // 2. Panel điều khiển
         JPanel controlPanel = new JPanel(new BorderLayout());
         
         inputField = new JTextField();
         inputField.setFont(new Font("Monospaced", Font.BOLD, 14));
-        inputField.setToolTipText("Nhập nước đi (ví dụ: e2e4) rồi nhấn Enter");
         
         JButton btnReset = new JButton("Reset Game");
         
@@ -54,95 +52,82 @@ public class SimpleChessGui extends JFrame {
         controlPanel.add(btnReset, BorderLayout.EAST);
         
         add(controlPanel, BorderLayout.SOUTH);
-        JButton btnPredict = new JButton("🔮 Dự đoán");
-controlPanel.add(btnPredict, BorderLayout.NORTH); // Hoặc vị trí bạn muốn
-
-// Xử lý sự kiện bấm nút
-btnPredict.addActionListener(e -> {
-    // Chạy trong luồng riêng để không đơ giao diện khi tính toán lâu
-    new Thread(() -> {
-        btnPredict.setEnabled(false);
-        btnPredict.setText("Đang tính...");
         
-        try {
-            TreeAnalyzer analyzer = new TreeAnalyzer();
-            
-            // Lấy clone bàn cờ hiện tại để không ảnh hưởng bàn cờ chính
-            // (Chesslib board không có clone deep dễ dàng, 
-            // nên tạo board mới và load FEN)
-            Board analysisBoard = new Board();
-            analysisBoard.loadFromFen(gameController.getBoard().getFen());
+        JButton btnPredict = new JButton("🔮 Dự đoán");
+        controlPanel.add(btnPredict, BorderLayout.NORTH); 
 
-            // Bắt đầu vét cạn (Phần nặng nhất)
-            AnalysisNode rootResult = analyzer.buildGameTree(analysisBoard);
+        // Xử lý sự kiện bấm nút Dự đoán
+        btnPredict.addActionListener(e -> {
+            new Thread(() -> {
+                SwingUtilities.invokeLater(() -> {
+                    btnPredict.setEnabled(false);
+                    btnPredict.setText("Đang tính...");
+                });
+                
+                try {
+                    TreeAnalyzer analyzer = new TreeAnalyzer();
+                    Board analysisBoard = new Board();
+                    analysisBoard.loadFromFen(gameController.getBoard().getFen());
 
-            // Hiển thị lên giao diện (phải quay về luồng UI)
-            SwingUtilities.invokeLater(() -> {
-                new TreeDialog(this, rootResult).setVisible(true);
-            });
-            
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        } finally {
-            SwingUtilities.invokeLater(() -> {
-                btnPredict.setEnabled(true);
-                btnPredict.setText("🔮 Dự đoán");
-            });
-        }
-    }).start();
-    });
+                    AnalysisNode rootResult = analyzer.buildGameTree(analysisBoard);
 
-        // 3. Panel Log (East) - Để xem lịch sử
+                    SwingUtilities.invokeLater(() -> {
+                        new TreeDialog(this, rootResult).setVisible(true);
+                    });
+                    
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                } finally {
+                    SwingUtilities.invokeLater(() -> {
+                        btnPredict.setEnabled(true);
+                        btnPredict.setText("🔮 Dự đoán");
+                    });
+                }
+            }).start();
+        });
+
+        // 3. Panel Log
         logArea = new JTextArea(20, 15);
         logArea.setEditable(false);
         logArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
         add(new JScrollPane(logArea), BorderLayout.EAST);
 
         // --- SỰ KIỆN ---
-        
-        // Khi nhấn Enter trong ô nhập liệu
         inputField.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String moveText = inputField.getText().trim();
                 if (!moveText.isEmpty()) {
                     processMove(moveText);
-                    inputField.setText(""); // Xóa ô nhập sau khi đi
+                    inputField.setText(""); 
                 }
             }
         });
 
-        // Khi nhấn nút Reset
         btnReset.addActionListener(e -> {
             gameController.resetGame();
-            selectedSquare = null; // Reset cả lựa chọn
+            selectedSquare = null; 
             updateBoardUI();
             logArea.setText("Game reset!\n");
         });
 
-        // Vẽ bàn cờ lần đầu
         updateBoardUI();
         logArea.append("Game started.\n");
         setVisible(true);
     }
 
-    // Khởi tạo lưới 8x8 ô cờ
     private void initializeBoard(JPanel boardPanel) {
-        for (int rank = 7; rank >= 0; rank--) { // Hàng 8 xuống 1
-            for (int file = 0; file < 8; file++) { // Cột A đến H
+        for (int rank = 7; rank >= 0; rank--) { 
+            for (int file = 0; file < 8; file++) { 
                 JButton btn = new JButton();
-                btn.setFont(new Font("Serif", Font.PLAIN, 50)); // Font to để hiển thị quân cờ
+                btn.setFont(new Font("Serif", Font.PLAIN, 50)); 
                 btn.setFocusPainted(false);
                 
-                // --- THÊM SỰ KIỆN CLICK CHO TỪNG Ô ---
-                // Cần biến final để dùng trong lambda
                 int finalRank = rank; 
                 int finalFile = file;
 
                 btn.addActionListener(e -> handleSquareClick(finalRank, finalFile));
-                // -------------------------------------
 
-                // Tô màu ô cờ
                 if ((rank + file) % 2 != 0) {
                     btn.setBackground(lightColor);
                 } else {
@@ -155,77 +140,80 @@ btnPredict.addActionListener(e -> {
         }
     }
 
-    // --- HÀM MỚI: XỬ LÝ CLICK CHUỘT ---
     private void handleSquareClick(int rank, int file) {
-        // Chuyển đổi tọa độ (rank, file) thành Square của chesslib (ví dụ: rank 1, file 4 -> E2)
-        // Lưu ý: Rank trong mảng chạy từ 0-7, nhưng Square.squareAt mong đợi rank 0 là hàng 1.
-        // Trong vòng lặp initializeBoard, rank 0 là hàng 1, nên map thẳng sang được.
         Square clickedSquare = Square.squareAt(rank * 8 + file); 
 
-        // TRƯỜNG HỢP 1: Chưa có ô nào được chọn -> Đây là click đầu tiên (Chọn quân)
+        // TRƯỜNG HỢP 1: Chọn quân (Click lần 1)
         if (selectedSquare == null) {
             Piece piece = gameController.getBoard().getPiece(clickedSquare);
-            // Chỉ cho chọn nếu ô đó có quân cờ
             if (piece != Piece.NONE) {
-                selectedSquare = clickedSquare;
-                // Highlight ô vừa chọn (Tô màu vàng)
-                squares[rank][file].setBackground(selectedColor);
-                logArea.append("Selected: " + clickedSquare + "\n");
+                // Kiểm tra xem có phải lượt của quân đó không (Để tránh chọn quân đối phương)
+                if (piece.getPieceSide() == gameController.getBoard().getSideToMove()) {
+                    selectedSquare = clickedSquare;
+                    squares[rank][file].setBackground(selectedColor); // Highlight
+                    // logArea.append("Selected: " + clickedSquare + "\n");
+                } else {
+                    // logArea.append("Không phải lượt của bạn!\n");
+                }
             }
         } 
-        // TRƯỜNG HỢP 2: Đã có ô chọn trước đó -> Đây là click thứ hai (Đi quân)
+        // TRƯỜNG HỢP 2: Đi quân (Click lần 2)
         else {
-            // Nếu click lại vào chính ô đang chọn -> Hủy chọn
+            // Nếu click lại chính ô đó -> Hủy chọn
             if (selectedSquare == clickedSquare) {
                 selectedSquare = null;
-                updateBoardUI(); // Vẽ lại để mất màu vàng
+                updateBoardUI(); 
+                return;
+            }
+            
+            // Nếu click vào một quân cùng phe khác -> Đổi lựa chọn sang quân mới
+            Piece targetPiece = gameController.getBoard().getPiece(clickedSquare);
+            if (targetPiece != Piece.NONE && 
+                targetPiece.getPieceSide() == gameController.getBoard().getSideToMove()) {
+                
+                selectedSquare = clickedSquare; // Đổi ô chọn
+                updateBoardUI(); // Vẽ lại để xóa highlight cũ và highlight mới
                 return;
             }
 
-            // Tạo chuỗi nước đi UCI (ví dụ: e2 + e4 -> "e2e4")
+            // Tạo nước đi
             String moveStr = selectedSquare.value() + clickedSquare.value();
             
             // Gửi đi xử lý
             processMove(moveStr);
             
-            // Sau khi đi xong (hoặc lỗi), reset lựa chọn
+            // Sau khi thử đi xong, luôn reset lựa chọn để bàn cờ sạch sẽ
             selectedSquare = null;
-            
-            // Cập nhật lại bàn cờ (để xóa màu vàng và cập nhật vị trí quân)
             updateBoardUI(); 
         }
     }
 
-    // Cập nhật giao diện dựa trên trạng thái hiện tại của bàn cờ
     private void updateBoardUI() {
-        Board board = gameController.getBoard(); // Lấy đối tượng Board từ Controller
+        Board board = gameController.getBoard(); 
 
         for (Square sq : Square.values()) {
             if (sq == Square.NONE) continue;
 
-            // Chuyển đổi Square của chesslib sang tọa độ mảng [row][col]
             int file = sq.getFile().ordinal(); 
             int rank = sq.getRank().ordinal(); 
 
-            // Cập nhật ký tự quân cờ
             Piece piece = board.getPiece(sq);
             String symbol = getPieceSymbol(piece);
             squares[rank][file].setText(symbol);
             
-            // Reset màu nền (Xóa highlight màu vàng nếu có)
+            // Reset màu nền
             if ((rank + file) % 2 != 0) {
                 squares[rank][file].setBackground(lightColor);
             } else {
                 squares[rank][file].setBackground(darkColor);
             }
 
-            // Tô màu chữ
             if (piece.getPieceSide() != null) {
                  squares[rank][file].setForeground(Color.BLACK);
             }
         }
         
-        // Nếu đang có ô được chọn, tô lại màu vàng cho nó (tránh bị updateBoardUI xóa mất)
+        // Highlight lại ô đang chọn (nếu có)
         if (selectedSquare != null) {
             int file = selectedSquare.getFile().ordinal();
             int rank = selectedSquare.getRank().ordinal();
@@ -233,27 +221,27 @@ btnPredict.addActionListener(e -> {
         }
     }
 
-    // Xử lý nước đi khi người dùng nhập (hoặc click)
     private void processMove(String moveStr) {
-        String[] moves = moveStr.trim().split("\\s+"); // Tách bằng khoảng trắng
+        String[] moves = moveStr.trim().split("\\s+"); 
 
-        // Gọi GameController để đi
         for (String x : moves){
             boolean isLegal = gameController.doMove(x);
             
             if (isLegal) {
                 logArea.append("Move: " + x + "\n");
-                // updateBoardUI(); // Không cần gọi ở đây nữa vì handleSquareClick sẽ gọi
+           
             } else {
                 logArea.append("Invalid: " + x + "\n");
-                // JOptionPane.showMessageDialog(this, "Nước đi không hợp lệ: " + x); 
-                // Tạm tắt popup để đỡ phiền khi click nhầm
+                JOptionPane.showMessageDialog(this, 
+                    "Nước đi không hợp lệ: " + x + "\n(Do sai luật, bị chiếu, hoặc chắn đường)", 
+                    "Lỗi Nước Đi", 
+                    JOptionPane.WARNING_MESSAGE);
             }
+            updateBoardUI();
         }
-        updateBoardUI(); // Cập nhật lại bàn cờ sau khi đi
+       
     }
 
-    // Chuyển đổi quân cờ sang ký tự Unicode đẹp mắt
     private String getPieceSymbol(Piece piece) {
         switch (piece) {
             case WHITE_KING:   return "♔";
