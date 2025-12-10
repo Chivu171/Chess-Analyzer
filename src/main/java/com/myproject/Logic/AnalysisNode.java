@@ -39,9 +39,9 @@ public class AnalysisNode {
     }
     @Override
     public String toString() {
-        // Hiển thị text trên cây: "e2e4 (W:40% D:10% L:50%)"
+        // JTree sẽ gọi hàm này để lấy text hiển thị
         if (move == null) return "Start";
-        return String.format("%s (W:%d L:%d D:%d)", move.toString(), winCount, lossCount, drawCount);
+        return String.format("%s (W:%d L:%d D:%d)", move.toString(), winCount, lossCount, drawCount); 
     }
 }
 

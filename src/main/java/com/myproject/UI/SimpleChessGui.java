@@ -72,6 +72,7 @@ public class SimpleChessGui extends JFrame {
                     AnalysisNode rootResult = analyzer.buildGameTree(analysisBoard);
 
                     SwingUtilities.invokeLater(() -> {
+                        // Truyền tham chiếu 'this' để TreeDialog có thể gọi lại hàm cập nhật bàn cờ
                         new TreeDialog(this, rootResult).setVisible(true);
                     });
                     
@@ -241,6 +242,25 @@ public class SimpleChessGui extends JFrame {
         }
        
     }
+    
+    // ----------- PHƯƠNG THỨC MỚI ĐƯỢC THÊM -----------
+    /**
+     * Public method để TreeDialog có thể gọi, chạy lại toàn bộ một chuỗi nước đi
+     * @param moveList chuỗi các nước đi UCI cách nhau bằng khoảng trắng (ví dụ: "e2e4 d7d5 e4d5")
+     */
+    public void executeMoveListFromAnalysis(String moveList) {
+        // 1. Reset game về trạng thái ban đầu
+        gameController.resetGame();
+        
+        // 2. Load lại toàn bộ chuỗi nước đi
+        gameController.loadMoveList(moveList);
+        
+        // 3. Cập nhật giao diện và log
+        selectedSquare = null; 
+        updateBoardUI(); 
+        logArea.setText("Loaded analysis line:\n" + moveList + "\n");
+    }
+    // ----------------------------------------------------
 
     private String getPieceSymbol(Piece piece) {
         switch (piece) {

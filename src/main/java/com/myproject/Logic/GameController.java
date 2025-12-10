@@ -23,16 +23,18 @@ public class GameController {
     // Input theo huong 2 thao tac tung buoc
     public boolean doMove (String uciMove){
         try{
-        String fromPosition = uciMove.substring(0, 2).toUpperCase();
-        String toPosition = uciMove.substring(2,4).toUpperCase();
-        Square from = Square.fromValue(fromPosition);
-        Square to = Square.fromValue(toPosition);
-        List<Move> legalMoves = board.legalMoves();
+            // Chuẩn hóa chuỗi UCI nhập vào (đảm bảo chữ thường)
+            String moveCheck = uciMove.toLowerCase(); 
+            
+            // Lấy danh sách nước đi hợp lệ từ chesslib
+            List<Move> legalMoves = board.legalMoves();
             
             for (Move legalMove : legalMoves) {
-                // Kiểm tra xem nước đi người dùng nhập có khớp với nước hợp lệ nào không
-                if (legalMove.getFrom() == from && legalMove.getTo() == to) {
-                    // Tìm thấy! Thực hiện nước đi này (để tự động xử lý phong cấp nếu có)
+                // *** THAY ĐỔI QUAN TRỌNG: SO SÁNH TRỰC TIẾP CHUỖI UCI ĐẦY ĐỦ ***
+                // Vì ta đã xác nhận move.toString() trả về chuỗi UCI (5 ký tự cho phong cấp), 
+                // ta dùng nó để so sánh chính xác nước đi
+                if (legalMove.toString().equals(moveCheck)) { 
+                    // Tìm thấy! Thực hiện nước đi này
                     board.doMove(legalMove);
                     return true;
                 }
@@ -45,9 +47,7 @@ public class GameController {
         catch (Exception e){
             System.err.println("Lỗi khi thực hiện nước đi: " + e.getMessage());
             return false;
-
         }
-
     }
 
     //Input theo huong 1
