@@ -25,6 +25,12 @@ public class SimpleChessGui extends JFrame {
     private final Color lightColor = new Color(240, 217, 181);
     private final Color darkColor = new Color(181, 136, 99);
     private final Color selectedColor = new Color(255, 255, 51); 
+    
+    private final JTextField fenInputField; 
+    
+    // *** KHAI BÁO BIẾN MỚI ĐỂ LƯU FEN GỐC PHÂN TÍCH ***
+    private String analysisStartFen = null; 
+    // ***************************************************
 
     public SimpleChessGui() {
         this.gameController = new GameController();
@@ -39,24 +45,46 @@ public class SimpleChessGui extends JFrame {
         initializeBoard(boardPanel);
         add(boardPanel, BorderLayout.CENTER);
 
-        // 2. Panel điều khiển
-        JPanel controlPanel = new JPanel(new BorderLayout());
+        // 2. TẠO PANEL CHÍNH PHÍA DƯỚI (SOUTH PANEL) 
+        JPanel southPanel = new JPanel(new GridLayout(2, 1)); 
+
+        // A. Panel nhập FEN (Hàng 1)
+        JPanel fenPanel = new JPanel(new BorderLayout());
+        fenInputField = new JTextField();
+        fenInputField.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        JButton btnLoadFen = new JButton("Load FEN");
         
+        fenPanel.add(new JLabel(" Nhập FEN: "), BorderLayout.WEST);
+        fenPanel.add(fenInputField, BorderLayout.CENTER);
+        fenPanel.add(btnLoadFen, BorderLayout.EAST);
+        
+        // B. Panel nhập nước đi (Hàng 2)
+        JPanel moveInputPanel = new JPanel(new BorderLayout());
         inputField = new JTextField();
         inputField.setFont(new Font("Monospaced", Font.BOLD, 14));
         
         JButton btnReset = new JButton("Reset Game");
         
-        controlPanel.add(new JLabel(" Nhập nước đi (UCI): "), BorderLayout.WEST);
-        controlPanel.add(inputField, BorderLayout.CENTER);
-        controlPanel.add(btnReset, BorderLayout.EAST);
-        
-        add(controlPanel, BorderLayout.SOUTH);
+        moveInputPanel.add(new JLabel(" Nhập nước đi (UCI): "), BorderLayout.WEST);
+        moveInputPanel.add(inputField, BorderLayout.CENTER);
+        moveInputPanel.add(btnReset, BorderLayout.EAST);
         
         JButton btnPredict = new JButton("🔮 Dự đoán");
-        controlPanel.add(btnPredict, BorderLayout.NORTH); 
+        moveInputPanel.add(btnPredict, BorderLayout.NORTH); 
+        
+        // Thêm vào South Panel
+        southPanel.add(fenPanel); 
+        southPanel.add(moveInputPanel);
+        add(southPanel, BorderLayout.SOUTH);
+        
 
-        // Xử lý sự kiện bấm nút Dự đoán
+        // 3. Panel Log
+        logArea = new JTextArea(20, 15);
+        logArea.setEditable(false);
+        logArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        add(new JScrollPane(logArea), BorderLayout.EAST);
+
+        // --- Xử lý sự kiện bấm nút Dự đoán ---
         btnPredict.addActionListener(e -> {
             new Thread(() -> {
                 SwingUtilities.invokeLater(() -> {
@@ -65,15 +93,19 @@ public class SimpleChessGui extends JFrame {
                 });
                 
                 try {
+                    // *** BƯỚC 1: LƯU FEN GỐC TRƯỚC KHI PHÂN TÍCH ***
+                    analysisStartFen = gameController.getBoard().getFen(); 
+                    // ************************************************
+                    
                     TreeAnalyzer analyzer = new TreeAnalyzer();
                     Board analysisBoard = new Board();
-                    analysisBoard.loadFromFen(gameController.getBoard().getFen());
+                    // Load trạng thái bàn cờ hiện tại để phân tích
+                    analysisBoard.loadFromFen(analysisStartFen); 
 
                     AnalysisNode rootResult = analyzer.buildGameTree(analysisBoard);
 
                     SwingUtilities.invokeLater(() -> {
-                        // Truyền tham chiếu 'this' để TreeDialog có thể gọi lại hàm cập nhật bàn cờ
-                        new TreeDialog(this, rootResult).setVisible(true);
+                        new TreeDialog(this, rootResult).setVisible(true); 
                     });
                     
                 } catch (Exception ex) {
@@ -86,14 +118,29 @@ public class SimpleChessGui extends JFrame {
                 }
             }).start();
         });
-
-        // 3. Panel Log
-        logArea = new JTextArea(20, 15);
-        logArea.setEditable(false);
-        logArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
-        add(new JScrollPane(logArea), BorderLayout.EAST);
-
-        // --- SỰ KIỆN ---
+        
+        // --- XỬ LÝ SỰ KIỆN LOAD FEN ---
+        btnLoadFen.addActionListener(e -> {
+            String fen = fenInputField.getText().trim();
+            if (fen.isEmpty()) {
+                logArea.append("FEN không được để trống!\n");
+                return;
+            }
+            
+            boolean success = gameController.loadFen(fen);
+            if (success) {
+                logArea.setText("FEN Loaded: " + fen + "\n");
+                selectedSquare = null; 
+                updateBoardUI();
+            } else {
+                 JOptionPane.showMessageDialog(this, 
+                    "Chuỗi FEN không hợp lệ.", 
+                    "Lỗi FEN", 
+                    JOptionPane.ERROR_MESSAGE);
+                 logArea.append("Lỗi tải FEN.\n");
+            }
+        });
+        // --- Xử lý sự kiện Nhập nước đi (Enter) ---
         inputField.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -105,6 +152,7 @@ public class SimpleChessGui extends JFrame {
             }
         });
 
+        // --- Xử lý sự kiện Reset ---
         btnReset.addActionListener(e -> {
             gameController.resetGame();
             selectedSquare = null; 
@@ -140,7 +188,7 @@ public class SimpleChessGui extends JFrame {
             }
         }
     }
-
+    
     private void handleSquareClick(int rank, int file) {
         Square clickedSquare = Square.squareAt(rank * 8 + file); 
 
@@ -152,10 +200,7 @@ public class SimpleChessGui extends JFrame {
                 if (piece.getPieceSide() == gameController.getBoard().getSideToMove()) {
                     selectedSquare = clickedSquare;
                     squares[rank][file].setBackground(selectedColor); // Highlight
-                    // logArea.append("Selected: " + clickedSquare + "\n");
-                } else {
-                    // logArea.append("Không phải lượt của bạn!\n");
-                }
+                } 
             }
         } 
         // TRƯỜNG HỢP 2: Đi quân (Click lần 2)
@@ -242,25 +287,24 @@ public class SimpleChessGui extends JFrame {
         }
        
     }
-    
-    // ----------- PHƯƠNG THỨC MỚI ĐƯỢC THÊM -----------
-    /**
-     * Public method để TreeDialog có thể gọi, chạy lại toàn bộ một chuỗi nước đi
-     * @param moveList chuỗi các nước đi UCI cách nhau bằng khoảng trắng (ví dụ: "e2e4 d7d5 e4d5")
-     */
+
+    // Phương thức được TreeDialog gọi
     public void executeMoveListFromAnalysis(String moveList) {
-        // 1. Reset game về trạng thái ban đầu
-        gameController.resetGame();
         
-        // 2. Load lại toàn bộ chuỗi nước đi
-        gameController.loadMoveList(moveList);
+        if (analysisStartFen == null) {
+            logArea.append("Lỗi: Không tìm thấy FEN gốc để tải lại!\n");
+            return;
+        }
+        
+        gameController.loadFen(analysisStartFen); 
+        
+        gameController.loadMoveList(moveList); 
         
         // 3. Cập nhật giao diện và log
         selectedSquare = null; 
         updateBoardUI(); 
-        logArea.setText("Loaded analysis line:\n" + moveList + "\n");
+        logArea.setText("Loaded analysis line from FEN:\n" + analysisStartFen + "\nMoves: " + moveList + "\n");
     }
-    // ----------------------------------------------------
 
     private String getPieceSymbol(Piece piece) {
         switch (piece) {

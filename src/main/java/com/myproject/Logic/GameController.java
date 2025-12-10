@@ -19,28 +19,37 @@ public class GameController {
     }
 
 
-
-    // Input theo huong 2 thao tac tung buoc
+    // THAY THẾ TOÀN BỘ PHƯƠNG THỨC NÀY
     public boolean doMove (String uciMove){
         try{
-            // Chuẩn hóa chuỗi UCI nhập vào (đảm bảo chữ thường)
             String moveCheck = uciMove.toLowerCase(); 
-            
-            // Lấy danh sách nước đi hợp lệ từ chesslib
             List<Move> legalMoves = board.legalMoves();
             
-            for (Move legalMove : legalMoves) {
-                // *** THAY ĐỔI QUAN TRỌNG: SO SÁNH TRỰC TIẾP CHUỖI UCI ĐẦY ĐỦ ***
-                // Vì ta đã xác nhận move.toString() trả về chuỗi UCI (5 ký tự cho phong cấp), 
-                // ta dùng nó để so sánh chính xác nước đi
-                if (legalMove.toString().equals(moveCheck)) { 
-                    // Tìm thấy! Thực hiện nước đi này
-                    board.doMove(legalMove);
-                    return true;
+            // 1. KIỂM TRA TRƯỜNG HỢP ĐẶC BIỆT: PHONG CẤP (5 ký tự: e7e8q)
+            if (moveCheck.length() == 5) {
+                for (Move legalMove : legalMoves) {
+                    if (legalMove.toString().equals(moveCheck)) { 
+                        board.doMove(legalMove);
+                        return true;
+                    }
+                }
+            } 
+            // 2. KIỂM TRA TRƯỜNG HỢP THÔNG THƯỜNG (4 ký tự: c7c1)
+            else if (moveCheck.length() == 4) {
+                String fromPosition = moveCheck.substring(0, 2).toUpperCase();
+                String toPosition = moveCheck.substring(2, 4).toUpperCase();
+                Square from = Square.fromValue(fromPosition);
+                Square to = Square.fromValue(toPosition);
+                
+                for (Move legalMove : legalMoves) {
+                    if (legalMove.getFrom() == from && legalMove.getTo() == to) {
+                        board.doMove(legalMove); 
+                        return true;
+                    }
                 }
             }
-
-            // Nếu chạy hết vòng lặp mà không thấy khớp -> Nước đi sai luật
+            
+            // Nếu không hợp lệ hoặc độ dài sai
             System.err.println("Nước đi không hợp lệ (Không nằm trong legalMoves): " + uciMove);
             return false;
         }
@@ -50,9 +59,10 @@ public class GameController {
         }
     }
 
+
     //Input theo huong 1
     public void loadMoveList (String moveList){
-        this.board = new Board();
+        // Không reset ở đây nữa, vì đã được SimpleChessGui xử lý bằng cách tải FEN gốc
         if (moveList.isEmpty()||moveList ==null){
             return;
         }
@@ -66,6 +76,17 @@ public class GameController {
             }
         }
     }
+    
+    public boolean loadFen(String fen) {
+        try {
+            this.board.loadFromFen(fen);
+            return true;
+        } catch (Exception e) {
+            System.err.println("Lỗi tải FEN: " + e.getMessage());
+            return false;
+        }
+    }
+    
     public void resetGame() {
         this.board = new Board();
     }
@@ -77,4 +98,3 @@ public class GameController {
         return this.board;
     }
 }
-

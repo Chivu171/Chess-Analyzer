@@ -59,12 +59,11 @@ public class TreeDialog extends JDialog {
                         
                         String moveList = moveListBuilder.toString().trim();
                         
-                        // Gọi hàm thực hiện chuỗi nước đi trên GUI chính
                         if (!moveList.isEmpty()) {
                             ownerGui.executeMoveListFromAnalysis(moveList); 
                         }
                         
-                        dispose(); // Đóng cửa sổ dialog này
+                        dispose(); 
                     }
                 }
             }
